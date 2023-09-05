@@ -1,0 +1,46 @@
+upstream cs_hyperf {
+# Hyperf HTTP Server 的 IP 及 端口
+    server 127.0.0.1:9601;
+#    server 127.0.0.1:9502;
+}
+
+server {
+    # 监听端口
+    listen 80;
+    # 绑定的域名，填写您的域名
+    server_name api.hyperf_admin.com;
+        access_log  /var/log/nginx/hyperf_admin.log;
+
+    location /export_excel/ {
+	root /var/www/html/hyperf_admin/server/storage/uploads/;
+	autoindex on;
+    }
+
+    resolver_timeout 120s;
+
+    location / {
+        add_header Access-Control-Allow-Origin  *;
+        add_header Access-Control-Allow-Headers X-Requested-With;
+        add_header Access-Control-Allow-Methods GET,POST,PUT,DELETE,PATCH,OPTIONS;
+        add_header Access-Control-Allow-Headers 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range,Authorization';
+
+        #针对浏览器的options预请求直接返回200，否则会被403 forbidden--invalie CORS request
+        if ($request_method = 'OPTIONS') {
+                return 200;
+            }
+
+
+        # 将客户端的 Host 和 IP 信息一并转发到对应节点
+        #proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        #proxy_set_header X-NginX-Proxy true;
+
+        # 转发Cookie，设置 SameSite
+        #proxy_cookie_path / "/; secure; HttpOnly; SameSite=strict";
+
+        # 执行代理访问真实服务器
+        proxy_pass http://cs_hyperf;
+    }
+}
+
