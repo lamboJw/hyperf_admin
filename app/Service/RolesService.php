@@ -28,6 +28,9 @@ class RolesService extends AbstractService implements RolesServiceInterface
     #[Inject]
     protected EventDispatcherInterface $dispatcher;
 
+    #[Inject]
+    protected RoleDataPermissions $roleDataPermissions;
+
     /**
      * 添加单条
      * @param array $data 添加的数据
@@ -50,22 +53,7 @@ class RolesService extends AbstractService implements RolesServiceInterface
                     $rolePermission[] = ['role_id' => $roleId, 'permission_id' => $permissionId];
                 }
                 RolePermissions::query()->insert($rolePermission);
-                $dataPermission = [];
-                foreach ($data_permission as $key => $value) {
-                    $value['role_id'] = $roleId;
-                    $value['data_type'] = $key;
-                    $value['teamwork_type'] = !empty($value['teamwork_type']) ? implode(',', $value['teamwork_type']) : '';
-                    $value['coop_way'] = !empty($value['coop_way']) ? implode(',', $value['coop_way']) : '';
-                    $value['our_main'] = !empty($value['our_main']) ? implode(',', $value['our_main']) : '';
-                    $value['specify_person'] = !empty($value['specify_person']) ? implode(',', $value['specify_person']) : '';
-                    $value['department'] = !empty($value['department']) ? json_encode($value['department'], JSON_UNESCAPED_UNICODE) : '';
-                    $value['pre_department'] = !empty($value['pre_department']) ? implode(',', $value['pre_department']) : '';
-                    $dataPermission[] = $value;
-                    $this->dispatcher->dispatch(new DeleteListenerEvent('dataPermissions', [$roleId, $key]));
-                }
-                if (!empty($dataPermission)) {
-                    RoleDataPermissions::query()->insert($dataPermission);
-                }
+                $this->roleDataPermissions->saveDataPermission($data_permission, $roleId);
                 return $roleId;
             });
         } catch (\Exception $e) {
@@ -129,25 +117,7 @@ class RolesService extends AbstractService implements RolesServiceInterface
                 // 删除原有角色和数据权限的映射关系
                 RoleDataPermissions::query()->where('role_id', $id)->delete();
                 // 再将现有的角色和数据权限的关系插入库中
-                $dataPermission = [];
-                foreach ($data_permission as $key => $value) {
-                    if ($id == 1) {
-                        $value['data_permission'] = 1;  //超管强制查看全部
-                    }
-                    $value['role_id'] = $id;
-                    $value['data_type'] = $key;
-                    $value['teamwork_type'] = !empty($value['teamwork_type']) ? implode(',', $value['teamwork_type']) : '';
-                    $value['coop_way'] = !empty($value['coop_way']) ? implode(',', $value['coop_way']) : '';
-                    $value['our_main'] = !empty($value['our_main']) ? implode(',', $value['our_main']) : '';
-                    $value['specify_person'] = !empty($value['specify_person']) ? implode(',', $value['specify_person']) : '';
-                    $value['department'] = !empty($value['department']) ? json_encode($value['department'], JSON_UNESCAPED_UNICODE) : '';
-                    $value['pre_department'] = !empty($value['pre_department']) ? implode(',', $value['pre_department']) : '';
-                    $dataPermission[] = $value;
-                    $this->dispatcher->dispatch(new DeleteListenerEvent('dataPermissions', [$id, $key]));
-                }
-                if (!empty($dataPermission)) {
-                    RoleDataPermissions::query()->insert($dataPermission);
-                }
+                $this->roleDataPermissions->saveDataPermission($data_permission, $id);
                 return $id;
             });
         } catch (\Exception $e) {
@@ -197,7 +167,7 @@ class RolesService extends AbstractService implements RolesServiceInterface
         }
         $role_has_users = UserRole::query()->join('users', 'users.id', '=', 'user_role.user_id')->join('department', 'users.department_id', '=', 'department.id')->where('users.status', 1)->where('role_id', $id)->select('users.username', 'users.name', 'department.name as department_name', 'users.position')->get()->toArray();
         $role['role_has_users'] = !empty($role_has_users) ? $role_has_users : [];
-        $dataPermissions = RoleDataPermissions::query()->where('role_id', $id)->select('data_type', 'data_permission', 'teamwork_type', 'coop_way', 'our_main', 'specify_person', 'department')->get()->toArray();
+        $dataPermissions = $this->roleDataPermissions::query()->where('role_id', $id)->select($this->roleDataPermissions->getFillable())->get()->toArray();
         if (!empty($dataPermissions)) {
             $role['data_permission'] = $dataPermissions;
             foreach ($role['data_permission'] as &$value) {
@@ -205,11 +175,7 @@ class RolesService extends AbstractService implements RolesServiceInterface
                 if ($value['data_permission'] == 0) {
                     $value['data_permission'] = '';
                 }
-                $value['teamwork_type'] = !empty($value['teamwork_type']) ? explode(',', $value['teamwork_type']) : [];
-                $value['coop_way'] = !empty($value['coop_way']) ? explode(',', $value['coop_way']) : [];
-                $value['our_main'] = !empty($value['our_main']) ? explode(',', $value['our_main']) : [];
-                $value['specify_person'] = !empty($value['specify_person']) ? explode(',', $value['specify_person']) : [];
-                $value['department'] = !empty($value['department']) ? json_decode($value['department'], true) : [];
+                $this->roleDataPermissions->handleDataPermission($value);
             }
             unset($value);
             $role['data_permission'] = array_column($role['data_permission'], null, 'data_type');

@@ -7,7 +7,9 @@ namespace App\Service;
 use App\Constants\ErrorCode;
 use App\Exception\BusinessException;
 use App\Model\Permissions;
+use App\Model\RoleDataPermissions;
 use App\Model\WechatUser;
+use App\Service\Interfaces\RolesServiceInterface;
 use App\Service\Interfaces\TokenServiceInterface;
 use App\Service\Interfaces\WorkWechatServiceInterface;
 use DateTime;
@@ -97,48 +99,7 @@ class TokenService extends AbstractService implements TokenServiceInterface
     {
         $tokenObj = $this->parseToken();
         $roleInfo = $tokenObj->claims()->get("roleInfo");
-        return $this->dataPermission($roleInfo->id, $type);
-    }
-
-    /**
-     * 获取角色数据权限
-     * @param $role_id
-     * @param $type
-     * @return array
-     */
-    #[Cacheable(prefix: "dataPermissions", ttl: 86400, listener: "dataPermissions")]
-    protected function dataPermission($role_id, $type): array
-    {
-        $dataPermission = Db::table("role_data_permission")
-            ->where('role_id', $role_id)->where('data_type', $type)
-            ->select('data_type', 'data_permission', 'teamwork_type', 'coop_way', 'our_main', 'specify_person', 'department', 'pre_department')
-            ->first();
-        if (empty($dataPermission)) {
-            $dataPermission = ['data_permission' => 2];
-        } else {
-            $dataPermission = (array)$dataPermission;
-            $dataPermission['teamwork_type'] = !empty($dataPermission['teamwork_type']) ? explode(',', $dataPermission['teamwork_type']) : [-1];
-            $dataPermission['coop_way'] = !empty($dataPermission['coop_way']) ? explode(',', $dataPermission['coop_way']) : [0];
-            $dataPermission['our_main'] = !empty($dataPermission['our_main']) ? explode(',', $dataPermission['our_main']) : [''];
-            $dataPermission['specify_person'] = !empty($dataPermission['specify_person']) ? explode(',', $dataPermission['specify_person']) : [];
-            $dataPermission['department'] = !empty($dataPermission['department']) ? json_decode($dataPermission['department'], true) : [];
-            $dataPermission['pre_department'] = !empty($dataPermission['pre_department']) ? explode(',', $dataPermission['pre_department']) : [];
-            $dataPermission['our_main_other'] = [];
-            if (!empty($dataPermission['department'])) {
-                $wc_uid = [];
-                foreach ($dataPermission['department'] as $item) {
-                    if (count($item) == 1) {
-                        $users = $this->getContainer()->get(WorkWechatServiceInterface::class)->user($item[0]);
-                        $wc_uid = array_merge($wc_uid, array_column($users, 'userid'));
-                    } else {
-                        $wc_uid[] = $item[1];
-                    }
-                }
-                $wc_uid = array_unique($wc_uid);
-                $dataPermission['department'] = WechatUser::query()->whereIn('wc_uid', $wc_uid)->pluck('uid')->toArray();
-            }
-        }
-        return $dataPermission;
+        return $this->getContainer()->get(RoleDataPermissions::class)->dataPermission($roleInfo->id, $type);
     }
 
 
