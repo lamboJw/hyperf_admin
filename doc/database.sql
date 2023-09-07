@@ -107,32 +107,12 @@ CREATE TABLE `role_data_permission`  (
   `role_id` int NOT NULL DEFAULT 0 COMMENT '角色ID',
   `data_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '数据类型',
   `data_permission` tinyint(1) NOT NULL DEFAULT 1 COMMENT '数据权限',
-  `teamwork_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '合同类型限制',
-  `coop_way` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '合作类型限制',
-  `our_main` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '我方主体限制',
-  `specify_person` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '指定人员数据可见',
+  `parent_game` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '一级游戏',
   `department` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '指定部门所属人员可见',
-  `pre_department` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '预审合同申请部门',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`role_id`, `data_type`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色数据权限' ROW_FORMAT = DYNAMIC;
-
--- ----------------------------
--- Records of role_data_permission
--- ----------------------------
-INSERT INTO `role_data_permission` VALUES (1, 'accrual_cost', 1, '', '', '', '', '', '', '2023-09-05 11:21:25', NULL);
-INSERT INTO `role_data_permission` VALUES (1, 'accrual_income', 1, '', '', '', '', '', '', '2023-09-05 11:21:25', NULL);
-INSERT INTO `role_data_permission` VALUES (1, 'contract', 1, '', '', '', '', '', '', '2023-09-05 11:21:25', NULL);
-INSERT INTO `role_data_permission` VALUES (1, 'file_box', 1, '', '', '', '', '', '', '2023-09-05 11:21:25', NULL);
-INSERT INTO `role_data_permission` VALUES (1, 'settle_cost', 1, '', '', '', '', '', '', '2023-09-05 11:21:25', NULL);
-INSERT INTO `role_data_permission` VALUES (1, 'settle_income', 1, '', '', '', '', '', '', '2023-09-05 11:21:25', NULL);
-INSERT INTO `role_data_permission` VALUES (2, 'accrual_cost', 2, '', '', '', '', '', '', '2023-09-05 15:27:35', NULL);
-INSERT INTO `role_data_permission` VALUES (2, 'accrual_income', 2, '', '', '', '', '', '', '2023-09-05 15:27:35', NULL);
-INSERT INTO `role_data_permission` VALUES (2, 'contract', 2, '', '', '', '', '', '', '2023-09-05 15:27:35', NULL);
-INSERT INTO `role_data_permission` VALUES (2, 'file_box', 2, '', '', '', '', '', '', '2023-09-05 15:27:35', NULL);
-INSERT INTO `role_data_permission` VALUES (2, 'settle_cost', 2, '', '', '', '', '', '', '2023-09-05 15:27:35', NULL);
-INSERT INTO `role_data_permission` VALUES (2, 'settle_income', 2, '', '', '', '', '', '', '2023-09-05 15:27:35', NULL);
 
 -- ----------------------------
 -- Table structure for role_permission
