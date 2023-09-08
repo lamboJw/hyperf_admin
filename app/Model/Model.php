@@ -66,7 +66,9 @@ abstract class Model extends BaseModel
      */
     public function getPageList(array $where, array $columns = ['*'], array $options = []): array
     {
-        return $this->buildWhere(self::query(), $where, $options)->select($columns)->paginate($options['prePage'] ?? 15, ['*'], 'page', $options['page'] ?? 1)->toArray();
+        $prePage = isset($options['prePage']) ? intval($options['prePage']) : 15;
+        $page = isset($options['page']) ? intval($options['page']) : 1;
+        return $this->buildWhere(self::query(), $where, $options)->select($columns)->paginate($prePage, ['*'], 'page', $page)->toArray();
     }
 
 }
