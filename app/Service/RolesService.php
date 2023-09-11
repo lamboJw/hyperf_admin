@@ -31,6 +31,9 @@ class RolesService extends AbstractService implements RolesServiceInterface
     #[Inject]
     protected RoleDataPermissions $roleDataPermissions;
 
+    #[Inject]
+    protected RolePermissions $rolePermissions;
+
     /**
      * 添加单条
      * @param array $data 添加的数据
@@ -46,13 +49,14 @@ class RolesService extends AbstractService implements RolesServiceInterface
                 $data_permission = $data['data_permission'] ?? [];
                 unset($data['data_permission']);
                 $data['created_user_id'] = $this->tokenService->getUid();
-                $re = Roles::query()->create($data);
+                $re = $this->model::query()->create($data);
                 $roleId = $re->id;
                 $rolePermission = [];
                 foreach ($permissionIds as $permissionId) {
                     $rolePermission[] = ['role_id' => $roleId, 'permission_id' => $permissionId];
                 }
-                RolePermissions::query()->insert($rolePermission);
+                $this->rolePermissions::query()->insert($rolePermission);
+                $this->rolePermissions->flush_role_permissions($roleId);
                 $this->roleDataPermissions->saveDataPermission($data_permission, $roleId);
                 return $roleId;
             });
@@ -69,8 +73,7 @@ class RolesService extends AbstractService implements RolesServiceInterface
      */
     public function getRoleList(array $where, array $columns = ['*'], array $options = []): array
     {
-        $res = $this->model->buildWhere($this->model::query(), $where, $options)->select($columns)
-            ->paginate($options['prePage'] ?? 15, ['*'], 'page', $options['page'] ?? 1)->toArray();
+        $res = $this->model->getPageList($where, $columns, $options);
         if (empty($res) || empty($res['data'])) {
             return [];
         }
@@ -103,17 +106,18 @@ class RolesService extends AbstractService implements RolesServiceInterface
                 unset($data['data_permission']);
                 // 先更新角色表信息
                 if (!empty($data)) {
-                    Roles::query()->where('id', $id)->update($data);
+                    $this->model::query()->where('id', $id)->update($data);
                 }
 
                 // 删除原有角色和权限的映射关系
-                RolePermissions::query()->where('role_id', $id)->delete();
+                $this->rolePermissions::query()->where('role_id', $id)->delete();
                 // 再将现有的角色和权限的关系插入库中
                 $rolePermission = [];
                 foreach ($permissionIds as $permissionId) {
                     $rolePermission[] = ['role_id' => $id, 'permission_id' => $permissionId];
                 }
-                RolePermissions::query()->insert($rolePermission);
+                $this->rolePermissions::query()->insert($rolePermission);
+                $this->rolePermissions->flush_role_permissions($id);
                 // 删除原有角色和数据权限的映射关系
                 RoleDataPermissions::query()->where('role_id', $id)->delete();
                 // 再将现有的角色和数据权限的关系插入库中
@@ -134,7 +138,7 @@ class RolesService extends AbstractService implements RolesServiceInterface
     {
         return Db::transaction(function () use ($id) {
             // 删除角色信息
-            $deleteRes = Roles::query()->where('id', $id)->delete();
+            $deleteRes = $this->model::query()->where('id', $id)->delete();
             // 删除角色和权限的映射信息
             RolePermissions::query()->where('role_id', $id)->delete();
             RoleDataPermissions::query()->where('role_id', $id)->delete();

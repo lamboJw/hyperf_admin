@@ -8,7 +8,6 @@ use App\Constants\ErrorCode;
 use App\Exception\BusinessException;
 use App\Helper\CommonHelper;
 use App\Model\Department;
-use App\Model\Permissions;
 use App\Model\RolePermissions;
 use App\Model\Roles;
 use App\Model\UserRole;
@@ -20,7 +19,6 @@ use App\Service\Interfaces\UserServiceInterface;
 use Hyperf\DbConnection\Db;
 use Hyperf\Di\Annotation\Inject;
 use Hyperf\HttpServer\Contract\RequestInterface;
-use Hyperf\Logger\LoggerFactory;
 use JetBrains\PhpStorm\ArrayShape;
 use Phper666\JWTAuth\JWT;
 use function Hyperf\Support\make;
@@ -74,7 +72,7 @@ class UserService extends AbstractService implements UserServiceInterface
             ->leftJoin('wechat_user', 'wechat_user.uid', '=', 'users.id')
             ->where($where)
             ->select($columns)->selectRaw('ifnull(wechat_user.status, 0) as wechat_user_status')
-            ->paginate($options['prePage'] ?? 15, ['*'], 'page', $options['page'] ?? 1)->toArray();
+            ->paginate($options['prePage'] ? intval($options['prePage']) : 15, ['*'], 'page', $options['page'] ? intval($options['page']) : 1)->toArray();
         if (empty($data)) {
             return [];
         }
@@ -409,9 +407,7 @@ class UserService extends AbstractService implements UserServiceInterface
     public function getRoutes(): array
     {
         $role = $this->getContainer()->get(TokenServiceInterface::class)->getRoleInfo();
-        $cur_permissions = RolePermissions::query()->where('role_id', $role['id'])->pluck('permission_id')->toArray();
-        $parent_ids = Permissions::query()->whereIn('id', $cur_permissions)->distinct()->pluck('parent_id')->toArray();
-        $permission_ids = array_unique(array_merge($cur_permissions, $parent_ids));    //授权了子权限，添加上父权限
+        $permission_ids = $this->getContainer()->get(RolePermissions::class)->getRolePermissions($role['id']);
         return $this->getContainer()->get(PermissionsServiceInterface::class)->getPermissionList(
             [['id', 'IN', $permission_ids], ['path', '!=', '']],
             options: ['orderBy' => 'sort', 'get_routes' => true]
