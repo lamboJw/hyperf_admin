@@ -24,8 +24,16 @@ class PaginateRequest extends FormRequest {
      */
     public function rules(): array {
         return [
-            'page' => 'integer',
-            'prePage' => 'integer',
+            'page' => 'required|integer',
+            'prePage' => 'required|integer',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'page.required' => '缺少页码',
+            'prePage.required' => '缺少每页数量',
         ];
     }
 

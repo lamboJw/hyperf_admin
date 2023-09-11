@@ -26,8 +26,6 @@ class UserController extends AbstractController
 
     public function add(UsersAddRequest $usersAddRequest): array
     {
-        // 参数校验
-        $usersAddRequest->validated();
         // 请求参数
         $params = $this->request->all();
         $res = $this->user->createUser($params);
@@ -40,8 +38,6 @@ class UserController extends AbstractController
 
     public function update(UserUpdateRequest $userUpdateRequest): array
     {
-        // 参数校验
-        $userUpdateRequest->validated();
         // 请求参数
         $params = $this->request->all();
         $id = $params['id'];
@@ -56,8 +52,6 @@ class UserController extends AbstractController
 
     public function delete(UserUpdateRequest $userUpdateRequest): array
     {
-        // 参数校验
-        $userUpdateRequest->validated();
         $ids = $this->request->input("ids");
         foreach ($ids as $id) {
             $this->user->deleteUser($id);
@@ -77,8 +71,6 @@ class UserController extends AbstractController
 
     public function list(PaginateRequest $paginateRequest): array
     {
-        // 请求参数
-        $paginateRequest->validated();
         $params = $this->request->all();
         $where = [];
         // 如果有加上用户名则表示模糊搜索
@@ -99,8 +91,6 @@ class UserController extends AbstractController
 
     public function info(UserUpdateRequest $userUpdateRequest): array
     {
-        // 校验参数
-        $userUpdateRequest->validated();
         $id = $this->request->input("id");
         $res = $this->user->getUserInfo($id);
         return $this->success($res);
@@ -108,8 +98,6 @@ class UserController extends AbstractController
 
     public function login(UserLoginRequest $userLoginRequest): array
     {
-        // 校验参数
-        $userLoginRequest->validated();
         $params = $this->request->all();
         $res = $this->user->login($params);
 
@@ -132,8 +120,6 @@ class UserController extends AbstractController
 
     public function refresh(UserTokenRequest $userTokenRequest): array
     {
-        // 校验参数
-        $userTokenRequest->validated();
         $token = $this->request->input("token");
         $res = $this->user->refreshToken($token);
         return $this->success($res);
@@ -142,7 +128,6 @@ class UserController extends AbstractController
 
     public function wechat_map(): array
     {
-        // 校验参数
         $params = $this->request->all();
         $res = $this->user->mapWechatUser($params);
         return $this->success($res);
@@ -150,7 +135,6 @@ class UserController extends AbstractController
 
     public function wechat_unmap(): array
     {
-        // 校验参数
         $id = $this->request->input("id");
         $res = $this->user->unMapWechatUser($id);
         return $this->success();

@@ -22,8 +22,6 @@ class PermissionsController extends AbstractController
 
     public function add(PermissionsAddRequest $permissionsAddRequest): array
     {
-        // 参数校验
-        $permissionsAddRequest->validated();
         // 请求参数
         $params = $this->request->all();
         $res = $this->permissions->createPermission($params);
@@ -52,8 +50,6 @@ class PermissionsController extends AbstractController
 
     public function update(PermissionsUpdateRequest $permissionsUpdateRequest): array
     {
-        // 参数校验
-        $permissionsUpdateRequest->validated();
         // 请求参数
         $params = $this->request->all();
         $id = $params['id'];

@@ -24,8 +24,6 @@ class DepartmentController extends AbstractController
 
     public function add(DepartmentAddRequest $departmentAddRequest): array
     {
-        // 参数校验
-        $departmentAddRequest->validated();
         // 请求参数
         $name = $this->request->input("name");
         $res = $this->department->createDepartment(["name" => $name]);
@@ -37,8 +35,6 @@ class DepartmentController extends AbstractController
 
     public function update(DepartmentUpdateRequest $departmentUpdateRequest): array
     {
-        // 参数校验
-        $departmentUpdateRequest->validated();
         // 请求参数
         $params = $this->request->all();
         $id = $params['id'];
@@ -52,7 +48,6 @@ class DepartmentController extends AbstractController
 
     public function list(PaginateRequest $paginateRequest): array
     {
-        $paginateRequest->validated();
         // 请求参数
         $params = $this->request->all();
         $res = $this->department->getDepartmentList([], ['*'], $params);
@@ -61,8 +56,6 @@ class DepartmentController extends AbstractController
 
     public function delete(DepartmentRequest $departmentRequest): array
     {
-        // 校验参数
-        $validated = $departmentRequest->validated();
         $id = $this->request->input("id");
         $res = $this->department->deleteDepartment($id);
         if (!$res) {

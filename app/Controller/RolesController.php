@@ -24,8 +24,6 @@ class RolesController extends AbstractController
 
     public function add(RolesAddRequest $rolesAddRequest): array
     {
-        // 参数校验
-        $rolesAddRequest->validated();
         // 请求参数
         $params = $this->request->all();
         $res = $this->roles->createRole($params);
@@ -38,8 +36,6 @@ class RolesController extends AbstractController
 
     public function update(RolesUpdateRequest $rolesUpdateRequest): array
     {
-        // 参数校验
-        $rolesUpdateRequest->validated();
         // 请求参数
         $params = $this->request->all();
         $id = $params['id'];
@@ -53,7 +49,6 @@ class RolesController extends AbstractController
 
     public function list(PaginateRequest $paginateRequest): array
     {
-        $paginateRequest->validated();
         // 请求参数
         $params = $this->request->all();
         $where = [];
@@ -75,8 +70,6 @@ class RolesController extends AbstractController
 
     public function info(RolesUpdateRequest $rolesUpdateRequest): array
     {
-        // 校验参数
-        $validated = $rolesUpdateRequest->validated();
         $id = $this->request->input("id");
         $res = $this->roles->getRoleById($id, ['id', 'name', 'desc']);
         return $this->success($res);
@@ -84,8 +77,6 @@ class RolesController extends AbstractController
 
     public function delete(RolesUpdateRequest $rolesUpdateRequest): array
     {
-        // 校验参数
-        $validated = $rolesUpdateRequest->validated();
         $id = $this->request->input("id");
         $res = $this->roles->deleteRole($id);
         if (!$res) {
