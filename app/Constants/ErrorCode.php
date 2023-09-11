@@ -179,4 +179,10 @@ class ErrorCode extends AbstractConstants
      * @HttpCode("422")
      */
     const USER_ROLE_EMPTY = 100026;
+
+    /**
+     * @Message("您没有该游戏的权限")
+     * @HttpCode("422")
+     */
+    const PARENT_GAME_NOT_AUTH = 100027;
 }

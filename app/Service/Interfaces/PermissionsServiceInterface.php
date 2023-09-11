@@ -56,4 +56,12 @@ interface PermissionsServiceInterface {
      */
     public function deletePermission(int $id);
 
+    /**
+     * 判断一级游戏的权限
+     * @param string $type 数据权限类型
+     * @param int|null $pgid 一级游戏ID
+     * @return array|true
+     */
+    public function checkParentGamePermission(string $type, int $pgid = null): bool|array;
+
 }

@@ -9,6 +9,7 @@ use App\Exception\BusinessException;
 use App\Model\Permissions;
 use App\Model\RolePermissions;
 use App\Service\Interfaces\PermissionsServiceInterface;
+use App\Service\Interfaces\TokenServiceInterface;
 use Hyperf\Di\Annotation\Inject;
 use JetBrains\PhpStorm\ArrayShape;
 
@@ -17,6 +18,9 @@ class PermissionsService extends AbstractService implements PermissionsServiceIn
 
     #[Inject]
     protected Permissions $model;
+
+    #[Inject]
+    protected TokenServiceInterface $tokenService;
 
     /**
      * 添加单条
@@ -145,4 +149,30 @@ class PermissionsService extends AbstractService implements PermissionsServiceIn
         return $this->model::query()->where('parent_id', $parentId)->select($columns)->get()->toArray();
     }
 
+
+    public function checkParentGamePermission(string $type, int $pgid = null): bool|array
+    {
+        $dp = $this->tokenService->getDataPermission($type);
+        if ($dp['data_permission'] != 1) {  // 不是可查看所有数据
+            if ($dp['data_permission'] == 3 && !empty($dp['parent_game'])) {   // 指定可见数据，且选择了一级游戏
+                if (!empty($pgid) && !in_array($pgid, $dp['parent_game'])) { // 检查pgid是否在已选列表
+                    throw new BusinessException(ErrorCode::PARENT_GAME_NOT_AUTH);
+                } else {    //返回具体游戏权限
+                    return $dp['parent_game'];
+                }
+            } else {  // 指定可见数据，且没有选择一级游戏，或仅与自己相关数据
+                if ($type == 'parent_game') {   // 全局游戏权限，返回空权限
+                    if (!empty($pgid)) { //如果有指定pgid，就是要检查pgid是否有权限，所以抛出异常
+                        throw new BusinessException(ErrorCode::PARENT_GAME_NOT_AUTH);
+                    } else {
+                        return $dp['parent_game'];
+                    }
+                } else {    // 细分权限中，判断全局游戏权限
+                    return $this->checkParentGamePermission('parent_game', $pgid);
+                }
+            }
+        } else {    //返回true代表全部可见
+            return true;
+        }
+    }
 }
