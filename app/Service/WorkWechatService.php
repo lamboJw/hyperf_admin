@@ -4,7 +4,6 @@
 namespace App\Service;
 
 use App\Constants\ErrorCode;
-use App\Helper\CommonHelper;
 use App\Model\Department;
 use App\Model\Users;
 use App\Model\WechatUser;
@@ -20,7 +19,6 @@ use App\Exception\BusinessException;
 use App\Constants\WorkWechat;
 use Hyperf\DbConnection\Traits\HasContainer;
 use function Hyperf\Support\env;
-use function Hyperf\Support\make;
 
 class WorkWechatService implements WorkWechatServiceInterface
 {
@@ -314,7 +312,7 @@ class WorkWechatService implements WorkWechatServiceInterface
     {
         $this->getToken();
         $url = "https://qyapi.weixin.qq.com/cgi-bin/menu/get?access_token={$this->token}&agentid=" . WorkWechat::AGENTID;
-        $re = make(CommonHelper::class)->makeRequest('GET', $url);
+        $re = makeRequest('GET', $url);
         return json_decode($re['result'], true);
     }
 
@@ -343,7 +341,7 @@ class WorkWechatService implements WorkWechatServiceInterface
                 ],
             ]
         ];
-        $re = make(CommonHelper::class)->makeRequest('POST', $url, $data, 'application/json');
+        $re = makeRequest('POST', $url, $data, 'application/json');
         return json_decode($re['result'], true);
     }
 
@@ -364,7 +362,7 @@ class WorkWechatService implements WorkWechatServiceInterface
         $this->getToken();
         $url = "https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={$this->token}&type={$type}";
         $data['media'] = new \CURLFile($filepath, null, $filename);
-        $result = make(CommonHelper::class)->makeRequest('POST', $url, $data, 'multipart/form-data');
+        $result = makeRequest('POST', $url, $data, 'multipart/form-data');
         if ($result['code'] != 200) {
             $return = ['errcode' => -2, 'errmsg' => '上传接口请求失败'];
             $this->getContainer()->get(LoggerFactory::class)->get('logger')->error('上次临时素材失败', array_merge(compact('filepath', 'type'), $return));

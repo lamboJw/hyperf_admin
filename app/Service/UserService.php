@@ -6,7 +6,6 @@ namespace App\Service;
 
 use App\Constants\ErrorCode;
 use App\Exception\BusinessException;
-use App\Helper\CommonHelper;
 use App\Model\Department;
 use App\Model\RolePermissions;
 use App\Model\Roles;
@@ -21,7 +20,6 @@ use Hyperf\Di\Annotation\Inject;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use JetBrains\PhpStorm\ArrayShape;
 use Phper666\JWTAuth\JWT;
-use function Hyperf\Support\make;
 use function Hyperf\Support\env;
 
 class UserService extends AbstractService implements UserServiceInterface
@@ -296,7 +294,7 @@ class UserService extends AbstractService implements UserServiceInterface
         $tokenInfo['permissionInfo'] = $permissionInfo;
         $tokenInfo['department'] = $department['name'] ?? '';
         $tokenInfo['department_id'] = $userInfo['department_id'];
-        $tokenInfo['ip'] = make(CommonHelper::class)->ip();
+        $tokenInfo['ip'] = getIp();
         $token = $this->jwt->setScene('default')->getToken('default', $tokenInfo);
         $userRes['token'] = $token->toString();
         $userRes['tts'] = $this->jwt->getTTL($userRes['token']);
@@ -388,7 +386,7 @@ class UserService extends AbstractService implements UserServiceInterface
         }
 
         $url = env('QBSC_BASE_URL') . '/api/third_party/check_login';
-        $rec = make(CommonHelper::class)->makeRequest('post', $url, $data);
+        $rec = makeRequest('post', $url, $data);
         $rec = json_decode($rec['result'], true);
         if ($rec['code'] != 0) {
             return ['url' => $uri . '2'];

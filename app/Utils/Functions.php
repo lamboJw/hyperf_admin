@@ -1,47 +1,59 @@
 <?php
 
-namespace App\Helper;
-
 use App\Constants\ErrorCode;
 use App\Exception\BusinessException;
 use App\Model\Log;
 use App\Model\OpAction;
-use App\Service\TokenService;
-use Hyperf\HttpServer\Contract\RequestInterface;
+use App\Model\ParentGame;
+use App\Service\Interfaces\TokenServiceInterface;
 use Hyperf\Context\ApplicationContext;
+use Hyperf\HttpServer\Contract\RequestInterface;
 
-class CommonHelper
-{
-    public function del_zip_dir($path)
+if (!function_exists('del_zip_dir')) {
+    /**
+     * 删除路径下所有所有文件及文件夹
+     * @param $path
+     * @return void
+     */
+    function del_zip_dir($path): void
     {
         $file_list = scandir($path);
         foreach ($file_list as $file) {
             if (in_array($file, ['.', '..'])) continue;
             $file_path = rtrim($path, '/') . "/{$file}";
             if (is_dir($file_path)) {
-                $this->del_zip_dir($file_path);
+                del_zip_dir($file_path);
             } else {
                 @unlink($file_path);
             }
         }
         rmdir($path);
     }
+}
 
-    public function op_log($path, $res)
+if (!function_exists('op_log')) {
+    /**
+     * 系统操作日志
+     * @param $path
+     * @param $res
+     * @return bool
+     */
+    function op_log($path, $res): bool
     {
         // 从操作行为表获取数据
-        $opAction = \Hyperf\Context\ApplicationContext::getContainer()->get(OpAction::class);
-        $action = $opAction->getOneByOneCondition('path', $path);
+        $container = ApplicationContext::getContainer();
+        $action = $container->get(OpAction::class)->get_action($path);
         // 没在操作行为表中的则不记录
         if (empty($action)) {
-            return;
+            return false;
         }
         $op = $action['name'];
-        // 获取 jwt token
-        $tokenService = \Hyperf\Utils\ApplicationContext::getContainer()->get(TokenService::class);
-        $name = $tokenService->getUsername();
-        if ($name) {
-            // 操作状态
+        $name = '';
+        $parentGame = $container->get(ParentGame::class);
+        $tokenService = $container->get(TokenServiceInterface::class);
+        $token = $tokenService->getToken();
+        if ($token) {
+            $name = $tokenService->getUsername();
             if ($res['code'] == 0) {
                 $status = 1;
                 if (!empty($action['desc'])) {  //如果有详细描述，把详细描述添加到操作内容后面
@@ -57,7 +69,10 @@ class CommonHelper
                                     break;
                                 }
                             }
-                            $action['desc'] = str_replace($match[0][$k], $value, $action['desc']);
+                            if ($match[0][$k] == '{parent_game_id}') {
+                                $value = is_array($value) ? $parentGame->getMany($value) : $parentGame->getOne($value);
+                            }
+                            $action['desc'] = str_replace($match[0][$k], is_array($value) ? implode('、', $value) : $value, $action['desc']);
                         }
                     }
                     $op .= ' ' . $action['desc'];
@@ -70,11 +85,24 @@ class CommonHelper
         }
         // 插入操作日志
         $data = ['op' => $op, 'status' => $status, 'name' => $name];
-        $log = ApplicationContext::getContainer()->get(Log::class);
-        $log->createOne($data);
+        $container->get(Log::class)->create($data);
+        return true;
     }
+}
 
-    function makeRequest($method, $url, $params = [], $content_type = "application/x-www-form-urlencoded", $expire = 5, $is_browser = true, $extend = [])
+if (!function_exists('makeRequest')) {
+    /**
+     * 发起curl请求
+     * @param string $method 请求方法
+     * @param string $url 请求地址
+     * @param array $params 请求参数
+     * @param string $content_type
+     * @param int $expire 超时时间
+     * @param bool $is_browser 模拟浏览器POST数据
+     * @param array $extend 额外curl选项
+     * @return bool|array
+     */
+    function makeRequest(string $method, string $url, array $params = [], string $content_type = "application/x-www-form-urlencoded", int $expire = 5, bool $is_browser = true, array $extend = []): bool|array
     {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -158,8 +186,15 @@ class CommonHelper
         curl_close($ch);
         return $result;
     }
+}
 
-    function toChineseNumber($money)
+if (!function_exists('toChineseNumber')) {
+    /**
+     * 数字转中文
+     * @param $money
+     * @return string
+     */
+    function toChineseNumber($money): string
     {
         $money = round($money, 2);
         $cnynums = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
@@ -167,12 +202,12 @@ class CommonHelper
         $cnygrees = ['拾', '佰', '仟', '万', '拾', '佰', '仟', '亿'];
         list($int, $dec) = explode('.', $money, 2);
         $dec = array_filter([$dec[1], $dec[0]]);
-        $ret = array_merge($dec, [implode('', $this->cnyMapUnit(str_split($int), $cnygrees)), '']);
-        $ret = implode('', array_reverse($this->cnyMapUnit($ret, $cnyunits)));
+        $ret = array_merge($dec, [implode('', cnyMapUnit(str_split($int), $cnygrees)), '']);
+        $ret = implode('', array_reverse(cnyMapUnit($ret, $cnyunits)));
         return str_replace(array_keys($cnynums), $cnynums, $ret);
     }
 
-    private function cnyMapUnit($list, $units)
+    function cnyMapUnit($list, $units): array
     {
         $ul = count($units);
         $xs = array();
@@ -185,13 +220,14 @@ class CommonHelper
         }
         return $xs;
     }
+}
 
-
+if (!function_exists('getIp')) {
     /**
      * 获取客户端ip地址
      * @return mixed
      */
-    public function ip()
+    function getIp(): mixed
     {
         $res = ApplicationContext::getContainer()->get(RequestInterface::class)->getServerParams();
         if (isset($res['http_client_ip'])) {
@@ -206,8 +242,17 @@ class CommonHelper
             return $res['remote_addr'];
         }
     }
+}
 
-    public function deleteExpiredFile($base_dir, $expire_time = 86400, $frequency = 3600)
+if (!function_exists('deleteExpiredFile')) {
+    /**
+     * 删除路径中的过期文件
+     * @param string $base_dir 文件夹路径
+     * @param int $expire_time 超时时间
+     * @param int $frequency 操作频率
+     * @return void
+     */
+    function deleteExpiredFile(string $base_dir, int $expire_time = 86400, int $frequency = 3600): void
     {
         if (!is_dir($base_dir)) {
             return;
@@ -236,7 +281,9 @@ class CommonHelper
         flock($fp, LOCK_UN);
         fclose($fp);
     }
+}
 
+if (!function_exists('filterArrayKey')) {
     /**
      * 过滤数组中不需要的key
      * @param array $arr
@@ -244,14 +291,16 @@ class CommonHelper
      * @param bool $keep_keys 是要保留还是删除keys中的key，true为保留，false为删除
      * @return array
      */
-    public function filterArrayKey(array $arr, array $keys, bool $keep_keys = true): array
+    function filterArrayKey(array $arr, array $keys, bool $keep_keys = true): array
     {
         return array_filter($arr, function ($k) use ($keys, $keep_keys) {
             return $keep_keys ? in_array($k, $keys) : !in_array($k, $keys);
         }, ARRAY_FILTER_USE_KEY);
     }
+}
 
-    public function convPdf($path): string
+if(!function_exists('convPdf')) {
+    function convPdf($path): string
     {
         $path = BASE_PATH . '/storage/uploads' . $path;
         $ext = pathinfo($path)['extension'];

@@ -4,7 +4,6 @@
 namespace App\Controller;
 
 use App\Exception\BusinessException;
-use App\Helper\CommonHelper;
 use Hyperf\Di\Annotation\Inject;
 use Hyperf\HttpServer\Annotation\AutoController;
 use Hyperf\Support\Filesystem\Filesystem;
@@ -120,7 +119,7 @@ class UploadController extends AbstractController
     public function preview_doc(): array
     {
         $path = $this->request->input('path');
-        $pdf_path = $this->container->get(CommonHelper::class)->convPdf($path);
+        $pdf_path = convPdf($path);
         return parent::success(compact('pdf_path'));
     }
 }
